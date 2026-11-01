@@ -1,1 +1,48 @@
+# Proxmox VE & OPNsense Homelab Network Architecture
+
+I am running **Proxmox Virtual Environment**, a Type 1 virtualization platform, directly on a bare-metal Dell OptiPlex server. 
+
+Proxmox allows me to deploy multiple virtual machines (VMs), each equipped with its own virtual Network Interface Cards (NICs). These virtual NICs tie directly into Linux bridges, which function as virtual Ethernet switches. This setup enables VMs to communicate with each other as well as with external physical networks.
+
+---
+
+## 🌐 Network Architecture & Topology
+
+For this lab environment, I have configured two distinct Linux bridges to segment network traffic:
+
+### 1. Upstream Switch (`vmbr0`)
+*   **Purpose:** Serves as the upstream network switch connecting to the outside world.
+*   **Physical Mapping:** Connected to the Dell server's physical Ethernet interface `nic0`.
+*   **Upstream Connection:** Plugs directly into the primary household router.
+*   **Assigned Interfaces:** Provides network connectivity to both the Proxmox management interface and the Wide Area Network (WAN) interface of the virtualized OPNsense firewall.
+
+### 2. Internal LAN Switch (`vmbr1`)
+*   **Purpose:** Serves as the isolated internal Local Area Network (LAN) switch for the lab.
+*   **Physical Mapping:** Connected to another physical Ethernet interface, `nic2`.
+*   **Downstream Connection:** Connects to a physical wireless access point (WAP) through a Power over Ethernet (PoE) injector.
+
+---
+
+## 🛡️ OPNsense Routing & Firewall Configuration
+
+The **OPNsense virtual firewall** acts as the central router and security gateway between the two networks, strictly controlling traffic passing between the private lab environment and the household production network.
+
+OPNsense is provisioned with two virtual NICs:
+*   **WAN Interface:** Connected to `vmbr0` for upstream communication.
+*   **LAN Interface:** Connected to `vmbr1` to anchor the internal lab network.
+
+### IP Addressing Scheme (`10.10.80.0/24`)
+
+| Device / Interface | IP Address | Purpose |
+| :--- | :--- | :--- |
+| **OPNsense LAN Gateway** | `10.10.80.1` | Default gateway for all lab devices and VMs. |
+| **Proxmox Management** | `10.10.80.10` | Web UI and SSH administration access. |
+| **Lab Subnet Limit** | `10.10.80.255` | Broadcast address for the `/24` network bucket. |
+
+---
+
+## 🚀 Next Steps & Future Expansion
+
+*   **Wireless Lab Connectivity:** Once DHCP services, WAN routing, and the wireless access point configurations are finalized, physical client devices (like a desktop computer) will be able to connect wirelessly to the lab network. This allows full administrative access to Proxmox, OPNsense, and active VMs without requiring a physical patch cable to the Dell hardware.
+*   **Scaling the Lab:** As the environment expands, additional virtual infrastructure—such as Windows Server domain controllers and Windows enterprise clients—can be plugged directly into `vmbr1`. These new virtual machines will inherit immediate local network connectivity through the Linux bridge without exhausting physical hardware Ethernet ports.
 
